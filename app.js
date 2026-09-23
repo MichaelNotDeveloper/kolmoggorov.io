@@ -5,7 +5,7 @@
     easy: { label: 'Стажёр HDI-lab', level: 'халявный', rank: 1 },
     medium: { label: 'Тимлид Сильвермонт', level: 'средний', rank: 2 },
     hard: { label: 'Первокурсник НМУ', level: 'сложный', rank: 3 },
-    medal: { label: 'Колмогоровская медаль', level: 'очень сложный', rank: 4 }
+    medal: { label: 'Безработный', level: 'очень сложный', rank: 4 }
   };
   const savedState = JSON.parse(localStorage.getItem('kolmoggorov-state-v1') || '{}');
   const state = {
@@ -13,7 +13,7 @@
     saved: new Set(savedState.saved || []),
     notes: savedState.notes || {},
     page: 1,
-    query: '', difficulty: 'all', topic: 'all', year: 'all', status: 'all', sort: 'year-desc'
+    query: '', difficulty: 'all', topics: new Set(), year: 'all', status: 'all', sort: 'year-desc'
   };
   let currentTask = null;
   let toastTimeout;
@@ -23,6 +23,8 @@
   const escapeHTML = value => String(value).replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
   const saveState = () => localStorage.setItem('kolmoggorov-state-v1', JSON.stringify({ solved:[...state.solved], saved:[...state.saved], notes:state.notes }));
   const showToast = message => { const toast=$('#toast'); toast.textContent=message; toast.classList.add('visible'); clearTimeout(toastTimeout); toastTimeout=setTimeout(()=>toast.classList.remove('visible'),1800); };
+  const typeset = root => { if (window.MathJax?.typesetPromise) window.MathJax.typesetPromise([root]).catch(()=>{}); };
+  const clearTypeset = root => { if (window.MathJax?.typesetClear) window.MathJax.typesetClear([root]); };
 
   function switchView(view, updateHash = true) {
     $$('.nav-link').forEach(item => item.classList.toggle('active', item.dataset.view === view));
@@ -35,9 +37,21 @@
   $('.brand').addEventListener('click', event => { event.preventDefault(); switchView('problems'); });
 
   function populateFilters() {
-    [...new Set(tasks.map(task => task.topic))].sort((a,b)=>a.localeCompare(b,'ru')).forEach(topic => $('#topic-filter').add(new Option(topic,topic)));
+    const topics = [...new Set(tasks.map(task => task.topic))].sort((a,b)=>a.localeCompare(b,'ru'));
+    $('#topic-options').innerHTML = topics.map(topic => `<label class="topic-option"><input type="checkbox" value="${escapeHTML(topic)}"><span>${escapeHTML(topic)}</span><small>${tasks.filter(task=>task.topic===topic).length}</small></label>`).join('');
+    $$('#topic-options input').forEach(input => input.addEventListener('change', () => {
+      input.checked ? state.topics.add(input.value) : state.topics.delete(input.value);
+      state.page = 1; updateTopicPicker(); render();
+    }));
     [...new Set(tasks.map(task => task.year))].sort((a,b)=>b-a).forEach(year => $('#year-filter').add(new Option(year,year)));
     $('#task-count-hero').textContent = tasks.length;
+  }
+
+  function updateTopicPicker() {
+    const count = state.topics.size;
+    $('#topic-picker-label').textContent = count === 0 ? 'Все темы' : count === 1 ? [...state.topics][0] : `Выбрано тем: ${count}`;
+    $('#topic-picker-toggle').classList.toggle('has-selection', count > 0);
+    $$('#topic-options input').forEach(input => { input.checked = state.topics.has(input.value); });
   }
 
   function filteredTasks() {
@@ -45,7 +59,7 @@
     const list = tasks.filter(task => {
       if (query && !`${task.text} ${task.year} ${task.number} ${task.topic}`.toLocaleLowerCase('ru').includes(query)) return false;
       if (state.difficulty !== 'all' && task.difficulty !== state.difficulty) return false;
-      if (state.topic !== 'all' && task.topic !== state.topic) return false;
+      if (state.topics.size && !state.topics.has(task.topic)) return false;
       if (state.year !== 'all' && String(task.year) !== state.year) return false;
       if (state.status === 'solved' && !state.solved.has(task.id)) return false;
       if (state.status === 'unsolved' && state.solved.has(task.id)) return false;
@@ -77,7 +91,8 @@
     const pages = Math.max(1, Math.ceil(list.length/PAGE_SIZE));
     state.page = Math.min(state.page,pages);
     const start = (state.page-1)*PAGE_SIZE;
-    $('#problem-cards').innerHTML = list.slice(start,start+PAGE_SIZE).map(taskCard).join('');
+    const cards = $('#problem-cards'); clearTypeset(cards);
+    cards.innerHTML = list.slice(start,start+PAGE_SIZE).map(taskCard).join('');
     $('#results-count').textContent = list.length;
     $('#page-label').textContent = list.length ? `Страница ${state.page} из ${pages}` : '';
     $('#empty-state').hidden = list.length !== 0;
@@ -85,6 +100,7 @@
     renderPagination(pages);
     bindCards();
     updateProgress();
+    typeset(cards);
   }
 
   function renderPagination(pages) {
@@ -124,6 +140,7 @@
 
   function openTask(task) {
     currentTask=task; const difficulty=DIFFICULTIES[task.difficulty];
+    clearTypeset($('#dialog-content'));
     $('#dialog-content').innerHTML=`<div class="dialog-inner">
       <div class="dialog-kicker"><span>${task.date} · задача №${task.number}</span><span class="pill ${task.difficulty}">${difficulty.label}</span><span>${escapeHTML(task.topic)}</span></div>
       <h2>${task.title}</h2><div class="problem-text">${escapeHTML(task.text)}</div>
@@ -136,6 +153,7 @@
     $('.dialog-save').addEventListener('click',()=>{toggleSaved(task.id);openTaskRefresh(task);});
     $('.copy-link').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(location.href);showToast('Ссылка скопирована');}catch{showToast('Скопируйте адрес из строки браузера');}});
     $('.notes-label textarea').addEventListener('input',event=>{state.notes[task.id]=event.target.value;saveState();});
+    typeset($('#dialog-content'));
   }
 
   function openTaskRefresh(task){ $('#problem-dialog').close(); render(); openTask(task); }
@@ -144,10 +162,14 @@
   $('#problem-dialog').addEventListener('click',event=>{if(event.target===$('#problem-dialog')) closeDialog();});
   $('#problem-dialog').addEventListener('close',()=>{ if(currentTask && location.hash.startsWith('#task=')) history.replaceState(null,'','#problems'); currentTask=null; });
 
-  function resetFilters(){ state.query='';state.difficulty='all';state.topic='all';state.year='all';state.status='all';state.sort='year-desc';state.page=1;$('#search-input').value='';$('#difficulty-filter').value='all';$('#topic-filter').value='all';$('#year-filter').value='all';$('#status-filter').value='all';$('#sort-select').value='year-desc';render(); }
+  function resetFilters(){ state.query='';state.difficulty='all';state.topics.clear();state.year='all';state.status='all';state.sort='year-desc';state.page=1;$('#search-input').value='';$('#difficulty-filter').value='all';$('#year-filter').value='all';$('#status-filter').value='all';$('#sort-select').value='year-desc';updateTopicPicker();render(); }
   $('#search-input').addEventListener('input',event=>{state.query=event.target.value;state.page=1;render();});
-  [['difficulty-filter','difficulty'],['topic-filter','topic'],['year-filter','year'],['status-filter','status'],['sort-select','sort']].forEach(([id,key])=>$('#'+id).addEventListener('change',event=>{state[key]=event.target.value;state.page=1;render();}));
+  [['difficulty-filter','difficulty'],['year-filter','year'],['status-filter','status'],['sort-select','sort']].forEach(([id,key])=>$('#'+id).addEventListener('change',event=>{state[key]=event.target.value;state.page=1;render();}));
   $('#clear-filters').addEventListener('click',resetFilters); $('#empty-reset').addEventListener('click',resetFilters);
+  $('#topic-picker-toggle').addEventListener('click',()=>{const menu=$('#topic-menu');const willOpen=menu.hidden;menu.hidden=!willOpen;$('#topic-picker-toggle').setAttribute('aria-expanded',String(willOpen));});
+  $('#clear-topics').addEventListener('click',()=>{state.topics.clear();state.page=1;updateTopicPicker();render();});
+  document.addEventListener('click',event=>{if(!$('#topic-picker').contains(event.target)){ $('#topic-menu').hidden=true;$('#topic-picker-toggle').setAttribute('aria-expanded','false'); }});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('#topic-menu').hidden){$('#topic-menu').hidden=true;$('#topic-picker-toggle').setAttribute('aria-expanded','false');$('#topic-picker-toggle').focus();}});
   $$('.legend [data-difficulty]').forEach(button=>button.addEventListener('click',()=>{state.difficulty=button.dataset.difficulty;state.page=1;$('#difficulty-filter').value=state.difficulty;render();$('.results-line').scrollIntoView({behavior:'smooth'});}));
   $('#random-task').addEventListener('click',()=>{const list=filteredTasks();if(list.length)openTask(list[Math.floor(Math.random()*list.length)]);});
 
@@ -165,7 +187,7 @@
   $('#timer-reset').addEventListener('click',()=>{stopTimer();remaining=timerSeconds;$('#timer-toggle').textContent='Старт';$('#timer-note').textContent='Спокойно. Одна задача за раз.';updateTimer();});
   $('#timer-preset').addEventListener('change',event=>{timerSeconds=Number(event.target.value)*60;remaining=timerSeconds;stopTimer();$('#timer-toggle').textContent='Старт';updateTimer();});
 
-  populateFilters(); renderArchive(); render(); updateTimer();
+  populateFilters(); updateTopicPicker(); renderArchive(); render(); updateTimer();
   const initialHash=location.hash;
   if(initialHash.startsWith('#task=')){const task=tasks.find(item=>item.id===initialHash.slice(6));if(task)openTask(task);}
   else if(['#archive','#about'].includes(initialHash))switchView(initialHash.slice(1),false);

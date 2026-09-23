@@ -23,6 +23,11 @@
     </nav>
   </header>
 
+  <aside class="annotation-note" aria-label="Информация о разметке задач">
+    <span class="annotation-mark" aria-hidden="true">i</span>
+    <p>Сложность и тематика задач размечена GPT-6 Sol, если не согласны с разбивкой пишите — <strong>@meshaza</strong></p>
+  </aside>
+
   <main>
     <section class="view active" id="problems-view">
       <div class="intro-row">
@@ -51,8 +56,15 @@
 
         <div class="filters" aria-label="Фильтры задач">
           <label class="search"><span aria-hidden="true">⌕</span><span class="sr-only">Поиск</span><input id="search-input" type="search" placeholder="Поиск по условию"></label>
-          <label><span class="sr-only">Сложность</span><select id="difficulty-filter"><option value="all">Все уровни</option><option value="easy">Стажёр HDI-lab</option><option value="medium">Тимлид Сильвермонт</option><option value="hard">Первокурсник НМУ</option><option value="medal">Колмогоровская медаль</option></select></label>
-          <label><span class="sr-only">Тематика</span><select id="topic-filter"><option value="all">Все темы</option></select></label>
+          <label><span class="sr-only">Сложность</span><select id="difficulty-filter"><option value="all">Все уровни</option><option value="easy">Стажёр HDI-lab</option><option value="medium">Тимлид Сильвермонт</option><option value="hard">Первокурсник НМУ</option><option value="medal">Безработный</option></select></label>
+          <div class="topic-picker" id="topic-picker">
+            <button class="topic-picker-toggle" id="topic-picker-toggle" type="button" aria-expanded="false" aria-haspopup="true"><span id="topic-picker-label">Все темы</span><span class="topic-chevron" aria-hidden="true">⌄</span></button>
+            <div class="topic-menu" id="topic-menu" role="group" aria-label="Выберите темы" hidden>
+              <div class="topic-menu-head"><span>Тематика</span><button type="button" id="clear-topics">Очистить</button></div>
+              <div class="topic-options" id="topic-options"></div>
+              <p class="topic-help">Можно выбрать несколько тем</p>
+            </div>
+          </div>
           <label><span class="sr-only">Год</span><select id="year-filter"><option value="all">Все годы</option></select></label>
           <label><span class="sr-only">Статус</span><select id="status-filter"><option value="all">Любой статус</option><option value="unsolved">Не решено</option><option value="solved">Решено</option><option value="saved">В избранном</option></select></label>
           <label><span class="sr-only">Сортировка</span><select id="sort-select"><option value="year-desc">Сначала новые</option><option value="year-asc">Сначала старые</option><option value="difficulty-asc">Сначала попроще</option><option value="difficulty-desc">Сначала сложнее</option></select></label>
@@ -63,7 +75,7 @@
           <button class="pill easy" data-difficulty="easy"><strong>Стажёр HDI-lab</strong><small>халявный</small></button>
           <button class="pill medium" data-difficulty="medium"><strong>Тимлид Сильвермонт</strong><small>средний</small></button>
           <button class="pill hard" data-difficulty="hard"><strong>Первокурсник НМУ</strong><small>сложный</small></button>
-          <button class="pill medal" data-difficulty="medal"><strong>Колмогоровская медаль</strong><small>очень сложный</small></button>
+          <button class="pill medal" data-difficulty="medal"><strong>Безработный</strong><small>очень сложный</small></button>
         </div>
 
         <div class="results-line"><p><strong id="results-count">138</strong> задач найдено</p><p id="page-label">Страница 1</p></div>
@@ -105,6 +117,13 @@
   </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(', '\\)']] },
+      options: { enableMenu: false }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js"></script>
   <script src="tasks-data.js"></script>
   <script src="app.js"></script>
 </body>
