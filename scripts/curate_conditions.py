@@ -2,6 +2,8 @@ import json
 import re
 from pathlib import Path
 
+from legacy_2001_2008 import LEGACY_TASKS
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_FILE = ROOT / "dist" / "tasks-data.js"
@@ -561,8 +563,10 @@ CONDITIONS = {
 Докажите, что \(X_n/n^{1/p}\to0\) почти наверное при \(n\to\infty\).""",
 }
 
+CONDITIONS.update({task["id"]: task["text"] for task in LEGACY_TASKS})
 
 ADDITIONS = [
+    *LEGACY_TASKS,
     {
         "id": "2015-8",
         "year": 2015,
@@ -599,13 +603,17 @@ for task_id, text in CONDITIONS.items():
         raise SystemExit(f"Unknown task id: {task_id}")
     tasks_by_id[task_id]["text"] = clean_condition(text)
 
+for task in payload["tasks"]:
+    display_number = task.get("displayNumber", str(task["number"]))
+    task["title"] = f"Задача {task['year']}.{display_number}"
+
 payload["tasks"].sort(key=lambda task: (-task["year"], task["number"]))
 task_counts = {}
 for task in payload["tasks"]:
     task_counts[task["year"]] = task_counts.get(task["year"], 0) + 1
 for archive_item in payload["archive"]:
-    if archive_item["searchable"]:
-        archive_item["count"] = task_counts.get(archive_item["year"], 0)
+    archive_item["count"] = task_counts.get(archive_item["year"], 0)
+    archive_item["searchable"] = archive_item["count"] > 0
 DATA_FILE.write_text(
     "window.KOLMOGGOROV_DATA = "
     + json.dumps(payload, ensure_ascii=False, separators=(",", ":"))

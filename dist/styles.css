@@ -114,6 +114,9 @@ h1::selection,h2::selection{background:#80d3c3}
 .dialog-kicker{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:.82rem}
 .dialog-inner h2{font-size:clamp(2rem,5vw,3.1rem);line-height:1;margin:22px 0}
 .problem-text{font:clamp(1.1rem,1.55vw,1.28rem)/1.78 Georgia,"Times New Roman",serif;white-space:pre-wrap;margin-top:4px;padding:26px 30px;border:1px solid #cbd8d4;border-left:5px solid var(--teal);border-radius:14px;background:linear-gradient(145deg,#fff,#f6fbf9);box-shadow:0 10px 28px rgba(31,58,53,.08);overflow-wrap:anywhere}
+.problem-copy{white-space:pre-wrap}
+.problem-figure{margin:26px 0 2px;padding:14px;background:#fff;border:1px solid #d8d6cf;border-radius:10px;white-space:normal}
+.problem-figure img{display:block;width:100%;height:auto;object-fit:contain}
 .dialog-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px}
 .dialog-actions button,.dialog-actions a{padding:6px 9px;border-radius:7px;text-decoration:none;border:1px solid var(--line);background:#fff;color:var(--blue);cursor:pointer;font-size:.76rem;line-height:1.2;font-weight:700}
 .dialog-actions .dialog-solved.active{background:#e9f4ec;color:var(--green);border-color:#a9c9b2}
