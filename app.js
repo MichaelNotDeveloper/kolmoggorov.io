@@ -26,6 +26,7 @@
   const typeset = root => { if (window.MathJax?.typesetPromise) window.MathJax.typesetPromise([root]).catch(()=>{}); };
   const clearTypeset = root => { if (window.MathJax?.typesetClear) window.MathJax.typesetClear([root]); };
   const excerptText = text => text.replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => `\\(${math.trim()}\\)`).replace(/\s+/g, ' ').trim();
+  const taskNumber = task => `${task.year}.${task.displayNumber || task.number}`;
 
   function switchView(view, updateHash = true) {
     $$('.nav-link').forEach(item => item.classList.toggle('active', item.dataset.view === view));
@@ -58,7 +59,7 @@
   function filteredTasks() {
     const query = state.query.trim().toLocaleLowerCase('ru');
     const list = tasks.filter(task => {
-      if (query && !`${task.text} ${task.year} ${task.number} ${task.topic}`.toLocaleLowerCase('ru').includes(query)) return false;
+      if (query && !`${task.text} ${taskNumber(task)} ${task.topic}`.toLocaleLowerCase('ru').includes(query)) return false;
       if (state.difficulty !== 'all' && task.difficulty !== state.difficulty) return false;
       if (state.topics.size && !state.topics.has(task.topic)) return false;
       if (state.year !== 'all' && String(task.year) !== state.year) return false;
@@ -80,7 +81,7 @@
     const solved = state.solved.has(task.id);
     const saved = state.saved.has(task.id);
     return `<article class="problem-card ${solved?'solved':''}" data-id="${task.id}">
-      <div class="card-meta"><span>${task.year} · №${task.number}</span><span class="pill ${task.difficulty}" title="${difficulty.level}">${difficulty.label}</span></div>
+      <div class="card-meta"><span>№${taskNumber(task)}</span><span class="pill ${task.difficulty}" title="${difficulty.level}">${difficulty.label}</span></div>
       <h2>${task.title}</h2><p class="excerpt">${escapeHTML(excerptText(task.text))}</p>
       <div class="tags"><span>${escapeHTML(task.topic)}</span><button class="save-button ${saved?'active':''}" aria-label="${saved?'Убрать из избранного':'Добавить в избранное'}" title="Избранное">${saved?'◆':'◇'}</button></div>
       <footer><button class="open-problem">Открыть задачу</button><label class="solved-check"><input type="checkbox" ${solved?'checked':''}> Решено</label></footer>
@@ -143,8 +144,8 @@
     currentTask=task; const difficulty=DIFFICULTIES[task.difficulty];
     clearTypeset($('#dialog-content'));
     $('#dialog-content').innerHTML=`<div class="dialog-inner">
-      <div class="dialog-kicker"><span>${task.date} · задача №${task.number}</span><span class="pill ${task.difficulty}">${difficulty.label}</span><span>${escapeHTML(task.topic)}</span></div>
-      <h2>${task.title}</h2><section class="problem-text" aria-label="Условие задачи">${escapeHTML(task.text)}</section>
+      <div class="dialog-kicker"><span>${task.date} · №${taskNumber(task)}</span><span class="pill ${task.difficulty}">${difficulty.label}</span><span>${escapeHTML(task.topic)}</span></div>
+      <h2>${task.title}</h2><section class="problem-text" aria-label="Условие задачи"><div class="problem-copy">${escapeHTML(task.text)}</div>${task.image?`<figure class="problem-figure"><img src="${task.image}" alt="Схема к задаче ${taskNumber(task)}"></figure>`:''}</section>
       <div class="dialog-actions"><button class="dialog-solved ${state.solved.has(task.id)?'active':''}">${state.solved.has(task.id)?'✓ Решено':'Отметить решённой'}</button><button class="dialog-save">${state.saved.has(task.id)?'◆ В избранном':'◇ В избранное'}</button><a href="${task.pdf}" target="_blank" rel="noopener">Оригинал PDF ↗</a><button class="copy-link">Скопировать ссылку</button></div>
       <label class="notes-label">ЛИЧНЫЕ ЗАМЕТКИ<textarea placeholder="Идея решения, полезная формула…">${escapeHTML(state.notes[task.id]||'')}</textarea></label>
     </div>`;
