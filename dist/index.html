@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f2efe7">
+  <meta name="description" content="Интерактивный архив задач Колмогоровской олимпиады по теории вероятностей: фильтры, таймер и прогресс.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2321272a'/%3E%3Cpath d='M15 45 28 17h8l13 28h-9l-2.8-7H26.5l-2.8 7zm14-14h6l-3-8z' fill='%2329a38c'/%3E%3C/svg%3E">
+  <title>kolmoggorov — задачи по теории вероятностей</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#problems" aria-label="kolmoggorov, задачи">
+      <span class="brand-mark" aria-hidden="true">K</span>
+      <span class="wordmark">kol<span>mogg</span>orov</span>
+      <small>/ probability lab</small>
+    </a>
+    <nav class="nav" aria-label="Основная навигация">
+      <button class="nav-link active" data-view="problems">Задачи</button>
+      <button class="nav-link" data-view="archive">Архив</button>
+      <button class="nav-link" data-view="about">О проекте</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="view active" id="problems-view">
+      <div class="intro-row">
+        <div>
+          <p class="eyebrow">КОЛМОГОРОВСКАЯ ОЛИМПИАДА · 2001—2026</p>
+          <h1>Вероятность любит практику.</h1>
+          <p class="lede"><strong id="task-count-hero">138</strong> задач в интерактивном каталоге. Фильтруйте по теме и уровню, запускайте таймер и отмечайте решённое — прогресс останется в браузере.</p>
+        </div>
+        <aside class="timer" aria-label="Таймер решения">
+          <div class="timer-top">
+            <span>Таймер решения</span>
+            <label><span class="sr-only">Длительность</span><select id="timer-preset"><option value="25">25 мин</option><option value="60" selected>60 мин</option><option value="90">90 мин</option></select></label>
+          </div>
+          <div class="timer-time" id="timer-time" aria-live="polite">60:00</div>
+          <div class="timer-actions"><button class="primary" id="timer-toggle">Старт</button><button class="secondary" id="timer-reset">Сбросить</button></div>
+          <p class="timer-note" id="timer-note">Спокойно. Одна задача за раз.</p>
+        </aside>
+      </div>
+
+      <section class="workspace" aria-label="Каталог задач">
+        <div class="progress-card">
+          <div class="progress-number"><span class="label">РЕШЕНО</span><strong id="progress-label">0 из 138</strong></div>
+          <div class="progress-track" aria-hidden="true"><i id="progress-bar"></i></div>
+          <button class="shuffle" id="random-task">↗ Случайная задача</button>
+        </div>
+
+        <div class="filters" aria-label="Фильтры задач">
+          <label class="search"><span aria-hidden="true">⌕</span><span class="sr-only">Поиск</span><input id="search-input" type="search" placeholder="Поиск по условию"></label>
+          <label><span class="sr-only">Сложность</span><select id="difficulty-filter"><option value="all">Все уровни</option><option value="easy">Стажёр HDI-lab</option><option value="medium">Тимлид Сильвермонт</option><option value="hard">Первокурсник НМУ</option><option value="medal">Колмогоровская медаль</option></select></label>
+          <label><span class="sr-only">Тематика</span><select id="topic-filter"><option value="all">Все темы</option></select></label>
+          <label><span class="sr-only">Год</span><select id="year-filter"><option value="all">Все годы</option></select></label>
+          <label><span class="sr-only">Статус</span><select id="status-filter"><option value="all">Любой статус</option><option value="unsolved">Не решено</option><option value="solved">Решено</option><option value="saved">В избранном</option></select></label>
+          <label><span class="sr-only">Сортировка</span><select id="sort-select"><option value="year-desc">Сначала новые</option><option value="year-asc">Сначала старые</option><option value="difficulty-asc">Сначала попроще</option><option value="difficulty-desc">Сначала сложнее</option></select></label>
+          <button class="clear-filters" id="clear-filters">Сбросить</button>
+        </div>
+
+        <div class="legend" aria-label="Уровни сложности">
+          <button class="pill easy" data-difficulty="easy"><strong>Стажёр HDI-lab</strong><small>халявный</small></button>
+          <button class="pill medium" data-difficulty="medium"><strong>Тимлид Сильвермонт</strong><small>средний</small></button>
+          <button class="pill hard" data-difficulty="hard"><strong>Первокурсник НМУ</strong><small>сложный</small></button>
+          <button class="pill medal" data-difficulty="medal"><strong>Колмогоровская медаль</strong><small>очень сложный</small></button>
+        </div>
+
+        <div class="results-line"><p><strong id="results-count">138</strong> задач найдено</p><p id="page-label">Страница 1</p></div>
+        <div class="cards" id="problem-cards"></div>
+        <div class="empty-state" id="empty-state" hidden><span>∅</span><h2>Ничего не нашлось</h2><p>Попробуйте убрать один из фильтров или изменить запрос.</p><button id="empty-reset">Сбросить фильтры</button></div>
+        <nav class="pagination" id="pagination" aria-label="Страницы задач"></nav>
+      </section>
+    </section>
+
+    <section class="view" id="archive-view">
+      <div class="section-head">
+        <p class="eyebrow">ПЕРВОИСТОЧНИКИ · 21 ВЫПУСК</p>
+        <h1>Архив олимпиад.</h1>
+        <p class="lede">Оригинальные условия в PDF — от первой олимпиады до выпуска 2026 года. Все документы доступны прямо на сайте.</p>
+      </div>
+      <div class="archive-grid" id="archive-grid"></div>
+      <p class="archive-note">У выпусков 2001—2008 нестандартные встроенные шрифты, поэтому они доступны в оригинальном PDF без автоматической расшифровки. Формулы сохранены без искажений.</p>
+    </section>
+
+    <section class="view" id="about-view">
+      <div class="section-head about-head">
+        <p class="eyebrow">О ПРОЕКТЕ</p>
+        <h1>Никаких рейтингов. Только вы и задача.</h1>
+        <p class="lede">kolmoggorov — неофициальный тренажёр по материалам Колмогоровской студенческой олимпиады по теории вероятностей. Он помогает выбрать задачу по силам, сосредоточиться и видеть собственный прогресс.</p>
+      </div>
+      <div class="about-grid">
+        <article><span class="about-index">01</span><h2>Темы</h2><p>Распределения, независимость, комбинаторика, геометрическая вероятность, случайные процессы, мартингалы, предельные теоремы, статистика, моменты и неравенства.</p></article>
+        <article><span class="about-index">02</span><h2>Уровни</h2><p>Уровень — ориентир для тренировки, а не официальный рейтинг. Он оценён по адресованным курсам и позиции задачи в комплекте.</p></article>
+        <article><span class="about-index">03</span><h2>Приватность</h2><p>Решённые задачи, избранное и ваши заметки хранятся только в этом браузере. Аккаунт и отправка данных не нужны.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><span class="wordmark">kol<span>mogg</span>orov</span><span>Неофициальный интерактивный архив · 2001—2026</span></footer>
+
+  <dialog class="problem-dialog" id="problem-dialog">
+    <button class="dialog-close" id="dialog-close" aria-label="Закрыть">×</button>
+    <div id="dialog-content"></div>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="tasks-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
