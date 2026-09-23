@@ -1,5 +1,22 @@
-(() => {
+(async () => {
   const { tasks, archive } = window.KOLMOGGOROV_DATA;
+  let studyData = {
+    default: { hint: 'to be done', solution: 'to be done', answer: 'to be done', analysis: { keyIdeas: ['to be done'], alternativeApproaches: [], pitfalls: [], difficultyRationale: 'to be done' } },
+    tasks: {}
+  };
+  try {
+    const response = await fetch('solutions-data.json?v=2026-1');
+    if (response.ok) studyData = await response.json();
+  } catch {}
+  tasks.forEach(task => {
+    const details = studyData.tasks?.[task.id] || {};
+    task.hint = details.hint || studyData.default.hint;
+    task.solution = details.solution || studyData.default.solution;
+    task.answer = details.answer || studyData.default.answer;
+    task.solutionAnalysis = details.analysis || studyData.default.analysis;
+    task.topics = Array.isArray(details.topics) && details.topics.length ? details.topics : [task.topic];
+    if (details.difficulty) task.difficulty = details.difficulty;
+  });
   const PAGE_SIZE = 12;
   const DIFFICULTIES = {
     easy: { label: 'Стажёр HDI-lab', level: 'халявный', rank: 1 },
@@ -27,6 +44,7 @@
   const clearTypeset = root => { if (window.MathJax?.typesetClear) window.MathJax.typesetClear([root]); };
   const excerptText = text => text.replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => `\\(${math.trim()}\\)`).replace(/\s+/g, ' ').trim();
   const taskNumber = task => `${task.year}.${task.displayNumber || task.number}`;
+  const taskTopics = task => task.topics?.length ? task.topics : [task.topic];
 
   const themeToggle = $('#theme-toggle');
   const themeColor = $('meta[name="theme-color"]');
@@ -63,8 +81,10 @@
   $('.brand').addEventListener('click', event => { event.preventDefault(); switchView('problems'); });
 
   function populateFilters() {
-    const topics = [...new Set(tasks.map(task => task.topic))].sort((a,b)=>a.localeCompare(b,'ru'));
-    $('#topic-options').innerHTML = topics.map(topic => `<label class="topic-option"><input type="checkbox" value="${escapeHTML(topic)}"><span>${escapeHTML(topic)}</span><small>${tasks.filter(task=>task.topic===topic).length}</small></label>`).join('');
+    const topicCounts = new Map();
+    tasks.forEach(task => taskTopics(task).forEach(topic => topicCounts.set(topic, (topicCounts.get(topic) || 0) + 1)));
+    const topics = [...topicCounts.keys()].sort((a,b)=>a.localeCompare(b,'ru'));
+    $('#topic-options').innerHTML = topics.map(topic => `<label class="topic-option"><input type="checkbox" value="${escapeHTML(topic)}"><span>${escapeHTML(topic)}</span><small>${topicCounts.get(topic)}</small></label>`).join('');
     $$('#topic-options input').forEach(input => input.addEventListener('change', () => {
       input.checked ? state.topics.add(input.value) : state.topics.delete(input.value);
       state.page = 1; updateTopicPicker(); render();
@@ -83,9 +103,9 @@
   function filteredTasks() {
     const query = state.query.trim().toLocaleLowerCase('ru');
     const list = tasks.filter(task => {
-      if (query && !`${task.text} ${taskNumber(task)} ${task.topic}`.toLocaleLowerCase('ru').includes(query)) return false;
+      if (query && !`${task.text} ${taskNumber(task)} ${taskTopics(task).join(' ')}`.toLocaleLowerCase('ru').includes(query)) return false;
       if (state.difficulty !== 'all' && task.difficulty !== state.difficulty) return false;
-      if (state.topics.size && !state.topics.has(task.topic)) return false;
+      if (state.topics.size && !taskTopics(task).some(topic => state.topics.has(topic))) return false;
       if (state.year !== 'all' && String(task.year) !== state.year) return false;
       if (state.status === 'solved' && !state.solved.has(task.id)) return false;
       if (state.status === 'unsolved' && state.solved.has(task.id)) return false;
@@ -104,10 +124,12 @@
     const difficulty = DIFFICULTIES[task.difficulty];
     const solved = state.solved.has(task.id);
     const saved = state.saved.has(task.id);
+    const topics = taskTopics(task);
+    const topicLabel = `${topics[0]}${topics.length > 1 ? ` +${topics.length-1}` : ''}`;
     return `<article class="problem-card ${solved?'solved':''}" data-id="${task.id}">
       <div class="card-meta"><span>№${taskNumber(task)}</span><span class="pill ${task.difficulty}" title="${difficulty.level}">${difficulty.label}</span></div>
       <h2>${task.title}</h2><p class="excerpt">${escapeHTML(excerptText(task.text))}</p>
-      <div class="tags"><span>${escapeHTML(task.topic)}</span><button class="save-button ${saved?'active':''}" aria-label="${saved?'Убрать из избранного':'Добавить в избранное'}" title="Избранное">${saved?'◆':'◇'}</button></div>
+      <div class="tags"><span class="topic-summary" title="${escapeHTML(topics.join(' · '))}">${escapeHTML(topicLabel)}</span><button class="save-button ${saved?'active':''}" aria-label="${saved?'Убрать из избранного':'Добавить в избранное'}" title="Избранное">${saved?'◆':'◇'}</button></div>
       <footer><button class="open-problem">Открыть задачу</button><label class="solved-check"><input type="checkbox" ${solved?'checked':''}> Решено</label></footer>
     </article>`;
   }
@@ -166,10 +188,16 @@
 
   function openTask(task) {
     currentTask=task; const difficulty=DIFFICULTIES[task.difficulty];
+    const topics=taskTopics(task);
+    const hintTbd=task.hint.trim().toLocaleLowerCase('en')==='to be done';
+    const solutionTbd=task.solution.trim().toLocaleLowerCase('en')==='to be done';
     clearTypeset($('#dialog-content'));
     $('#dialog-content').innerHTML=`<div class="dialog-inner">
-      <div class="dialog-kicker"><span>${task.date} · №${taskNumber(task)}</span><span class="pill ${task.difficulty}">${difficulty.label}</span><span>${escapeHTML(task.topic)}</span></div>
+      <div class="dialog-kicker"><span>${task.date} · №${taskNumber(task)}</span><span class="pill ${task.difficulty}">${difficulty.label}</span><span class="dialog-topics">${topics.map(topic=>`<span>${escapeHTML(topic)}</span>`).join('')}</span></div>
       <h2>${task.title}</h2><section class="problem-text" aria-label="Условие задачи"><div class="problem-copy">${escapeHTML(task.text)}</div>${task.image?`<figure class="problem-figure"><img src="${task.image}" alt="Схема к задаче ${taskNumber(task)}"></figure>`:''}</section>
+      <div class="learning-tabs" role="group" aria-label="Материалы к задаче"><button class="learning-toggle" type="button" data-panel="hint-${task.id}" aria-controls="hint-${task.id}" aria-expanded="false"><span>Подсказка</span><i aria-hidden="true">+</i></button><button class="learning-toggle" type="button" data-panel="solution-${task.id}" aria-controls="solution-${task.id}" aria-expanded="false"><span>Решение</span><i aria-hidden="true">+</i></button></div>
+      <section class="learning-panel hint-panel ${hintTbd?'is-tbd':''}" id="hint-${task.id}" hidden><span class="learning-label">НАПРАВЛЕНИЕ</span><div class="learning-copy">${escapeHTML(task.hint)}</div></section>
+      <section class="learning-panel solution-panel ${solutionTbd?'is-tbd':''}" id="solution-${task.id}" hidden><span class="learning-label">РАЗБОР</span><div class="learning-copy">${escapeHTML(task.solution)}</div>${solutionTbd?'':`<div class="short-answer"><strong>Короткий ответ</strong><span>${escapeHTML(task.answer)}</span></div>`}</section>
       <div class="dialog-actions"><button class="dialog-solved ${state.solved.has(task.id)?'active':''}">${state.solved.has(task.id)?'✓ Решено':'Отметить решённой'}</button><button class="dialog-save">${state.saved.has(task.id)?'◆ В избранном':'◇ В избранное'}</button><a href="${task.pdf}" target="_blank" rel="noopener">Оригинал PDF ↗</a><button class="copy-link">Скопировать ссылку</button></div>
       <label class="notes-label">ЛИЧНЫЕ ЗАМЕТКИ<textarea placeholder="Идея решения, полезная формула…">${escapeHTML(state.notes[task.id]||'')}</textarea></label>
     </div>`;
@@ -179,6 +207,12 @@
     $('.dialog-save').addEventListener('click',()=>{toggleSaved(task.id);openTaskRefresh(task);});
     $('.copy-link').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(location.href);showToast('Ссылка скопирована');}catch{showToast('Скопируйте адрес из строки браузера');}});
     $('.notes-label textarea').addEventListener('input',event=>{state.notes[task.id]=event.target.value;saveState();});
+    $$('.learning-toggle').forEach(button=>button.addEventListener('click',()=>{
+      const panel=$('#'+button.dataset.panel); const willOpen=panel.hidden;
+      $$('.learning-panel').forEach(item=>{item.hidden=true;});
+      $$('.learning-toggle').forEach(item=>{item.setAttribute('aria-expanded','false');item.querySelector('i').textContent='+';});
+      if(willOpen){panel.hidden=false;button.setAttribute('aria-expanded','true');button.querySelector('i').textContent='−';}
+    }));
     typeset($('#dialog-content'));
   }
 
