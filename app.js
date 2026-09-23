@@ -5,7 +5,7 @@
     tasks: {}
   };
   try {
-    const response = await fetch('solutions-data.json?v=official-2');
+    const response = await fetch('solutions-data.json?v=official-3');
     if (response.ok) studyData = await response.json();
   } catch {}
   tasks.forEach(task => {
