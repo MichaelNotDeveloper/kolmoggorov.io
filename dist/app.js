@@ -28,6 +28,30 @@
   const excerptText = text => text.replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => `\\(${math.trim()}\\)`).replace(/\s+/g, ' ').trim();
   const taskNumber = task => `${task.year}.${task.displayNumber || task.number}`;
 
+  const themeToggle = $('#theme-toggle');
+  const themeColor = $('meta[name="theme-color"]');
+  const systemTheme = matchMedia('(prefers-color-scheme: dark)');
+  const hasSavedTheme = localStorage.getItem('kolmoggorov-theme') !== null;
+  function applyTheme(theme, persist = true) {
+    const isDark = theme === 'dark';
+    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+    themeColor?.setAttribute('content', isDark ? '#101619' : '#f2efe7');
+    themeToggle.setAttribute('aria-pressed', String(isDark));
+    themeToggle.setAttribute('aria-label', isDark ? 'Включить светлую тему' : 'Включить тёмную тему');
+    themeToggle.title = isDark ? 'Включить светлую тему' : 'Включить тёмную тему';
+    if (persist) localStorage.setItem('kolmoggorov-theme', isDark ? 'dark' : 'light');
+  }
+  applyTheme(document.documentElement.dataset.theme || (systemTheme.matches ? 'dark' : 'light'), false);
+  themeToggle.addEventListener('click', () => {
+    const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(nextTheme);
+    showToast(nextTheme === 'dark' ? 'Тёмная тема включена' : 'Светлая тема включена');
+  });
+  if (!hasSavedTheme) systemTheme.addEventListener?.('change', event => {
+    if (localStorage.getItem('kolmoggorov-theme') === null) applyTheme(event.matches ? 'dark' : 'light', false);
+  });
+
   function switchView(view, updateHash = true) {
     $$('.nav-link').forEach(item => item.classList.toggle('active', item.dataset.view === view));
     $$('.view').forEach(item => item.classList.toggle('active', item.id === `${view}-view`));
