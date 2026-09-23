@@ -107,9 +107,9 @@ h1::selection,h2::selection{background:#80d3c3}
 .site-footer>span:last-child{font-size:.85rem}
 .problem-dialog{width:min(940px,calc(100vw - 28px));max-height:min(90vh,980px);border:0;border-radius:18px;padding:0;background:var(--card);color:var(--ink);box-shadow:0 30px 90px #1a1c1d66;overflow:auto}
 .problem-dialog::backdrop{background:#16201f99;backdrop-filter:blur(3px)}
-.dialog-close{position:sticky;float:right;top:14px;right:14px;width:38px;height:38px;padding:0;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;font-size:0;line-height:0;z-index:2}
-.dialog-close::before,.dialog-close::after{content:"";position:absolute;top:50%;left:50%;width:15px;height:2px;border-radius:99px;background:currentColor;transform:translate(-50%,-50%) rotate(45deg)}
-.dialog-close::after{transform:translate(-50%,-50%) rotate(-45deg)}
+.dialog-close{position:sticky;top:14px;width:38px;height:38px;margin:14px 14px -52px auto;padding:0;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;display:grid;place-items:center;z-index:2}
+.dialog-close svg{display:block;width:18px;height:18px;overflow:visible}
+.dialog-close path{fill:none;stroke:currentColor;stroke-width:2.25;stroke-linecap:round;vector-effect:non-scaling-stroke}
 .dialog-inner{padding:42px 46px 40px}
 .dialog-kicker{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:.82rem}
 .dialog-inner h2{font-size:clamp(2rem,5vw,3.1rem);line-height:1;margin:22px 0}
