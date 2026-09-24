@@ -5,7 +5,7 @@
     tasks: {}
   };
   try {
-    const response = await fetch('solutions-data.json?v=official-3');
+    const response = await fetch('solutions-data.json?v=latex-1');
     if (response.ok) studyData = await response.json();
   } catch {}
   tasks.forEach(task => {
@@ -193,7 +193,7 @@
     const hintTbd=task.hint.trim().toLocaleLowerCase('en')==='to be done';
     const solutionTbd=task.solution.trim().toLocaleLowerCase('en')==='to be done' && !task.officialSolution;
     const official=task.officialSolution;
-    const officialUrl=official ? `${official.pdf}#page=${official.page}&view=FitH` : '';
+    const officialUrl=official ? `${official.pdf}#page=${official.page}` : '';
     const answerReady=task.answer && task.answer.trim().toLocaleLowerCase('en')!=='to be done';
     clearTypeset($('#dialog-content'));
     $('#dialog-content').innerHTML=`<div class="dialog-inner">
@@ -201,9 +201,10 @@
       <h2>${task.title}</h2><section class="problem-text" aria-label="Условие задачи"><div class="problem-copy">${escapeHTML(task.text)}</div>${task.image?`<figure class="problem-figure"><img src="${task.image}" alt="Схема к задаче ${taskNumber(task)}"></figure>`:''}</section>
       <div class="learning-tabs" role="group" aria-label="Материалы к задаче"><button class="learning-toggle" type="button" data-panel="hint-${task.id}" aria-controls="hint-${task.id}" aria-expanded="false"><span>Подсказка</span><i aria-hidden="true">+</i></button><button class="learning-toggle" type="button" data-panel="solution-${task.id}" aria-controls="solution-${task.id}" aria-expanded="false"><span>Решение</span><i aria-hidden="true">+</i></button></div>
       <section class="learning-panel hint-panel ${hintTbd?'is-tbd':''}" id="hint-${task.id}" hidden><span class="learning-label">НАПРАВЛЕНИЕ</span><div class="learning-copy">${escapeHTML(task.hint)}</div></section>
-      <section class="learning-panel solution-panel ${solutionTbd?'is-tbd':''}" id="solution-${task.id}" hidden><span class="learning-label">РАЗБОР</span><div class="learning-copy">${escapeHTML(task.solution)}</div>${answerReady?`<div class="short-answer"><strong>Короткий ответ</strong><span>${escapeHTML(task.answer)}</span></div>`:''}${official?`<div class="official-solution"><div class="official-solution-head"><div><strong>Официальное решение</strong><span>${escapeHTML(official.label)}</span></div><a href="${escapeHTML(officialUrl)}" target="_blank" rel="noopener">Открыть PDF ↗</a></div><iframe class="official-solution-frame" data-src="${escapeHTML(officialUrl)}" title="Официальное решение задачи ${taskNumber(task)}" loading="lazy"></iframe><p>Если встроенный просмотр недоступен, откройте PDF по ссылке выше.</p></div>`:''}</section>
-      <div class="dialog-actions"><button class="dialog-solved ${state.solved.has(task.id)?'active':''}">${state.solved.has(task.id)?'✓ Решено':'Отметить решённой'}</button><button class="dialog-save">${state.saved.has(task.id)?'◆ В избранном':'◇ В избранное'}</button><a href="${task.pdf}" target="_blank" rel="noopener">Оригинал PDF ↗</a><button class="copy-link">Скопировать ссылку</button></div>
+      <section class="learning-panel solution-panel ${solutionTbd?'is-tbd':''}" id="solution-${task.id}" hidden><span class="learning-label">РАЗБОР</span><div class="learning-copy">${escapeHTML(task.solution)}</div>${answerReady?`<div class="short-answer"><strong>Короткий ответ</strong><span>${escapeHTML(task.answer)}</span></div>`:''}</section>
+      <div class="dialog-actions"><button class="dialog-solved ${state.solved.has(task.id)?'active':''}">${state.solved.has(task.id)?'✓ Решено':'Отметить решённой'}</button><button class="dialog-save">${state.saved.has(task.id)?'◆ В избранном':'◇ В избранное'}</button><button class="copy-link">Скопировать ссылку</button></div>
       <label class="notes-label">ЛИЧНЫЕ ЗАМЕТКИ<textarea placeholder="Идея решения, полезная формула…">${escapeHTML(state.notes[task.id]||'')}</textarea></label>
+      <div class="source-links"><span>Оригиналы в PDF</span><a href="${task.pdf}" target="_blank" rel="noopener">Условие ↗</a>${official?`<a href="${escapeHTML(officialUrl)}" target="_blank" rel="noopener">Решение · стр. ${official.page} ↗</a>`:''}</div>
     </div>`;
     history.replaceState(null,'',`#task=${task.id}`);
     const dialog=$('#problem-dialog'); dialog.showModal();
@@ -215,7 +216,7 @@
       const panel=$('#'+button.dataset.panel); const willOpen=panel.hidden;
       $$('.learning-panel').forEach(item=>{item.hidden=true;});
       $$('.learning-toggle').forEach(item=>{item.setAttribute('aria-expanded','false');item.querySelector('i').textContent='+';});
-      if(willOpen){panel.hidden=false;button.setAttribute('aria-expanded','true');button.querySelector('i').textContent='−';const frame=panel.querySelector('.official-solution-frame');if(frame&&!frame.getAttribute('src'))frame.src=frame.dataset.src;}
+      if(willOpen){panel.hidden=false;button.setAttribute('aria-expanded','true');button.querySelector('i').textContent='−';typeset(panel);}
     }));
     typeset($('#dialog-content'));
   }
